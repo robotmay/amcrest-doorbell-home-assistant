@@ -1,38 +1,55 @@
 require "rubygems"
 require "bundler"
+require "logger"
 
 Bundler.require
 
-class AmcrestDoorbell
-  def initialize(host:, username:, password:)
-    @host = host
+require "./lib/amcrest_doorbell"
 
-    @conn = Faraday.new(url: base_url) do |f|
-      f.request :digest, username, password
-      f.adapter Faraday.default_adapter
-    end
-  end
+logger = Logger.new(STDOUT)
+logger.level = Logger::INFO
 
-  def event_stream(codes: %w(All))
-    codes = codes.join(",")
+webhook_url = ENV["WEBHOOK_URL"]
 
-    @conn.get("/cgi-bin/eventManager.cgi?action=attach&codes=[#{codes}]") do |req|
-      p req
+doorbell = AmcrestDoorbell.new(
+  host: ENV["AMCREST_HOST"],
+  username: ENV["AMCREST_USER"],
+  password: ENV["AMCREST_PASS"]
+)
 
-      req.options.on_data = -> (chunk, overall_received_bytes) do
-        yield chunk
-      end
-    end
-  end
+default_timeout = 0
+timeout_increment = 0.1
+timeout = default_timeout
 
-  private
+connection_success = -> do
+  logger.info("Connected")
 
-  def base_url
-    "http://#{@host}"
+  unless timeout == default_timeout
+    logger.info("Resetting reconnection delay to #{default_timeout} second(s)")
+    timeout = default_timeout
   end
 end
 
+loop do
+  logger.info("Connecting to event bus. Next reconnection delay is #{timeout} second(s)")
 
-client.event_stream do |chunk|
-  p chunk
+  doorbell.event_stream(success: connection_success) do |event|
+    logger.info("Received event: #{event.code}")
+
+    webhook = Faraday.post(webhook_url, event.to_json, { "Content-Type" => "application/json" })
+    logger.info("Webhook response: #{webhook.status}")
+
+    case
+    # Doorbell button pressed. Probably.
+    when event.code == "_DoTalkAction_"
+      logger.info("Doorbell button pressed")
+    end
+  end
+
+rescue Faraday::Error => ex
+  logger.error("Connection error: #{ex}")
+
+  # Try not to DOS the doorbell by backing off retries
+  sleep timeout
+  timeout += timeout_increment
 end
