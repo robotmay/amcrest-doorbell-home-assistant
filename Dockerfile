@@ -1,8 +1,9 @@
-FROM ruby:3-alpine
+FROM ruby:3-slim
 
 RUN bundle config --global frozen 1
 
-WORKDIR /usr/src/bus
+RUN mkdir /usr/src/app
+WORKDIR /usr/src/app
 
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
