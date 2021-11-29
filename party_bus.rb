@@ -6,7 +6,7 @@ Bundler.require
 
 require "./lib/amcrest_doorbell"
 
-logger = Logger.new(STDOUT)
+logger = Logger.new("/proc/1/fd/1")
 logger.level = Logger::INFO
 
 webhook_url = ENV["WEBHOOK_URL"]
