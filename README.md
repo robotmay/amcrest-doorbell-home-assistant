@@ -8,10 +8,10 @@ It's simple because a doorbell always has to work, and `amcrest2mqtt` is quite a
 
 Run it in docker. Set the following env vars:
 
-`WEBHOOK_URL`: The URL of a Home Assistant (or something else) webhook trigger in an automation
-`AMCREST_HOST`: The hostname/IP of your doorbell
-`AMCREST_USER`: The admin username of the doorbell (probably `admin`)
-`AMCREST_PASS`: The admin password
+* `WEBHOOK_URL`: The URL of a Home Assistant (or something else) webhook trigger in an automation
+* `AMCREST_HOST`: The hostname/IP of your doorbell
+* `AMCREST_USER`: The admin username of the doorbell (probably `admin`)
+* `AMCREST_PASS`: The admin password
 
 There are plenty of log entries for debugging but it should be pretty straight-forward. All events will be forwarded to the webhook address.
 
